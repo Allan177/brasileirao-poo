@@ -20,10 +20,10 @@ import java.util.Map;
 
 public class BrasileiraoScraper {
 
-    public static List<Map<String, String>> extrairDadosTabela(String url) {
+    public static List<Team> extrairDadosTabela(String url) {
         WebDriverManager.chromedriver().setup();
         ChromeOptions options = new ChromeOptions();
-        options.addArguments("--headless=new");
+        // options.addArguments("--headless=new"); Exibe o navegador
         WebDriver driver = new ChromeDriver(options);
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
 
@@ -38,53 +38,44 @@ public class BrasileiraoScraper {
             Elements linhasEquipes = doc.select("table.tabela__equipes tbody tr");
             Elements linhasPontos = doc.select("table.tabela__pontos tbody tr");
 
-
-            List<Map<String, String>> tabelaData = new ArrayList<>();
+            List<Team> teams = new ArrayList<>();
 
             for (int i = 0; i < linhasEquipes.size(); i++) {
-                Map<String, String> linhaData = new LinkedHashMap<>();
-
                 Element linhaEquipe = linhasEquipes.get(i);
                 Element linhaPonto = linhasPontos.get(i);
 
-
-                linhaData.put("Posicao", linhaEquipe.selectFirst("td.classificacao__equipes--posicao").text());
-                linhaData.put("Time", linhaEquipe.selectFirst("strong.classificacao__equipes--nome").text());
-                linhaData.put("Variacao", linhaEquipe.selectFirst("span.classificacao__icone").parent().text());
-
-
+                String position = linhaEquipe.selectFirst("td.classificacao__equipes--posicao").text();
+                String name = linhaEquipe.selectFirst("strong.classificacao__equipes--nome").text();
                 Elements pontos = linhaPonto.select("td.classificacao__pontos");
 
-                linhaData.put("P", pontos.get(0).text());
-                linhaData.put("J", pontos.get(1).text());
-                linhaData.put("V", pontos.get(2).text());
-                linhaData.put("E", pontos.get(3).text());
-                linhaData.put("D", pontos.get(4).text());
-                linhaData.put("GP", pontos.get(5).text());
-                linhaData.put("GC", pontos.get(6).text());
-                linhaData.put("SG", pontos.get(7).text());
-                linhaData.put("%", pontos.get(8).text());
+                String points = pontos.get(0).text();
+                String gamesPlayed = pontos.get(1).text();
+                String wins = pontos.get(2).text();
+                String draws = pontos.get(3).text();
+                String losses = pontos.get(4).text();
+                String goalsFor = pontos.get(5).text();
+                String goalsAgainst = pontos.get(6).text();
+                String goalDifference = pontos.get(7).text();
+                String performance = pontos.get(8).text();
 
-                String ultimosJogos = "";
-                Elements ultimosJogosElements = linhaPonto.select("span.classificacao__ultimos_jogos");
-                for (Element jogo : ultimosJogosElements) {
+                StringBuilder lastGames = new StringBuilder();
+                Elements lastGamesElements = linhaPonto.select("span.classificacao__ultimos_jogos");
+                for (Element jogo : lastGamesElements) {
                     String classe = jogo.className();
                     if (classe.contains("classificacao__ultimos_jogos--v")) {
-                        ultimosJogos += "V";
+                        lastGames.append("V");
                     } else if (classe.contains("classificacao__ultimos_jogos--d")) {
-                        ultimosJogos += "D";
+                        lastGames.append("D");
                     } else if (classe.contains("classificacao__ultimos_jogos--e")) {
-                        ultimosJogos += "E";
+                        lastGames.append("E");
                     }
-
                 }
-                linhaData.put("Últimos Jogos", ultimosJogos);
 
-                tabelaData.add(linhaData);
+                Team team = new Team(position, name, points, gamesPlayed, wins, draws, losses, goalsFor, goalsAgainst, goalDifference, performance, lastGames.toString());
+                teams.add(team);
             }
 
-
-            return tabelaData;
+            return teams;
 
         } finally {
             driver.quit();
@@ -96,12 +87,14 @@ public class BrasileiraoScraper {
         String url = "https://ge.globo.com/futebol/brasileirao-serie-a/";
 
         try {
-            List<Map<String, String>> tabela = extrairDadosTabela(url);
-            System.out.println("Dados da tabela do Brasileirão:");
-            tabela.forEach(linha -> {
-                linha.forEach((key, value) -> System.out.println(key + ": " + value));
-                System.out.println("-------------------");
-            });
+            List<Team> tabela = extrairDadosTabela(url);
+            System.out.println("Tabela do Brasileirão:");
+            System.out.printf(
+                    "%-5s %-20s %-3s %-3s %-3s %-3s %-3s %-3s %-3s %-3s %-6s %s\n",
+                    "Pos", "Time", "P", "J", "V", "E", "D", "GP", "GC", "SG", "%", "Últimos Jogos"
+            );
+            System.out.println("--------------------------------------------------------------------------------------");
+            tabela.forEach(System.out::println);
         } catch (Exception e) {
             System.err.println("Erro ao fazer web scraping: " + e.getMessage());
         }
