@@ -23,7 +23,7 @@ public class BrasileiraoScraper {
     public static List<Team> extrairDadosTabela(String url) {
         WebDriverManager.chromedriver().setup();
         ChromeOptions options = new ChromeOptions();
-        // options.addArguments("--headless=new"); Exibe o navegador
+        options.addArguments("--headless=new"); // comentado exibe o navegador
         WebDriver driver = new ChromeDriver(options);
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
 
